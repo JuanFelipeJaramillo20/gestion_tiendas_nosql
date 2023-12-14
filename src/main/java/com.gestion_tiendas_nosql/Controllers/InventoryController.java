@@ -1,10 +1,13 @@
 package com.gestion_tiendas_nosql.Controllers;
 
+import com.gestion_tiendas_nosql.DTOs.InventoryDTO;
+import com.gestion_tiendas_nosql.Exceptions.InventoryNotFoundException;
 import com.gestion_tiendas_nosql.Entities.Inventory;
 import com.gestion_tiendas_nosql.Services.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,36 +27,39 @@ public class InventoryController {
     @GetMapping("{id}")
     @Operation(summary = "This method returns an inventory with the specific id")
     public ResponseEntity<?> getInventoryByID(@PathVariable("id") String id){
-        return ResponseEntity.ok(inventoryService.getInventoryByID(id));
+        try {
+            Inventory inventory = inventoryService.getInventoryById(id);
+            return ResponseEntity.ok(inventory);
+        } catch (InventoryNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PostMapping()
     @Operation(summary = "This method creates a new inventory")
-    public ResponseEntity<?> createInventory(@RequestBody InventoryCreateRequest inventoryCreateRequest){
+    public ResponseEntity<?> createInventory(@RequestBody InventoryDTO inventoryCreateRequest){
         return ResponseEntity.ok(inventoryService.createInventory(inventoryCreateRequest));
     }
 
     @PutMapping
     @Operation(summary = "This method updates an existing inventory")
-    public ResponseEntity<?> updateInventory(@PathVariable("id") String id, @RequestBody InventoryUpdateRequest inventoryUpdateRequest) {
-        if (!inventoryService.inventoryExists(id)) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateInventory(@PathVariable("id") String id, @RequestBody InventoryDTO inventoryUpdateRequest) {
+        try {
+            Inventory updatedInventory = inventoryService.updateInventory(id, inventoryUpdateRequest);
+            return ResponseEntity.ok(updatedInventory);
+        } catch (InventoryNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        Inventory updatedInventory = inventoryService.updateInventory(id, inventoryUpdateRequest);
-
-        return ResponseEntity.ok(updatedInventory);
     }
 
     @DeleteMapping
     @Operation(summary = "This method deletes an inventory")
     public ResponseEntity<?> deleteInventory(@PathVariable("id") String id) {
-        if (!inventoryService.inventoryExists(id)) {
-            return ResponseEntity.notFound().build();
+        try {
+            inventoryService.deleteInventory(id);
+            return ResponseEntity.ok().build();
+        } catch (InventoryNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        inventoryService.deleteInventory(id);
-
-        return ResponseEntity.noContent().build();
     }
 }

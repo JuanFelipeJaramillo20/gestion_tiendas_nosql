@@ -1,11 +1,13 @@
 package com.gestion_tiendas_nosql.Controllers;
 
-import com.gestion_tiendas_nosql.Entities.Refund;
+import com.gestion_tiendas_nosql.DTOs.ReportDTO;
+import com.gestion_tiendas_nosql.Exceptions.ReportNotFoundException;
 import com.gestion_tiendas_nosql.Entities.Report;
 import com.gestion_tiendas_nosql.Services.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,36 +28,39 @@ public class ReportController {
     @GetMapping("{id}")
     @Operation(summary = "This method returns a report with the specific id")
     public ResponseEntity<?> getReportByID(@PathVariable("id") String id){
-        return ResponseEntity.ok(reportService.getReportByID(id));
+        try {
+            Report report = reportService.getReportById(id);
+            return ResponseEntity.ok(report);
+        }catch (ReportNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PostMapping()
     @Operation(summary = "This method creates a new report")
-    public ResponseEntity<?> createReport(@RequestBody ReportCreateRequest reportCreateRequest){
+    public ResponseEntity<?> createReport(@RequestBody ReportDTO reportCreateRequest){
         return ResponseEntity.ok(reportService.createReport(reportCreateRequest));
     }
 
     @PutMapping
     @Operation(summary = "This method updates an existing report")
-    public ResponseEntity<?> updateReport(@PathVariable("id") String id, @RequestBody ReportUpdateRequest reportUpdateRequest) {
-        if (!reportService.reportExists(id)) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateReport(@PathVariable("id") String id, @RequestBody ReportDTO reportUpdateRequest) {
+        try {
+            Report updatedReport = reportService.updateReport(id, reportUpdateRequest);
+            return ResponseEntity.ok(updatedReport);
+        }catch (ReportNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        Report updatedReport = reportService.updateReport(id, reportUpdateRequest);
-
-        return ResponseEntity.ok(updatedReport);
     }
 
     @DeleteMapping
     @Operation(summary = "This method deletes a report")
     public ResponseEntity<?> deleteReport(@PathVariable("id") String id) {
-        if (!reportService.reportExists(id)) {
-            return ResponseEntity.notFound().build();
+        try {
+            reportService.deleteReport(id);
+            return ResponseEntity.ok().build();
+        }catch (ReportNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        reportService.deleteReport(id);
-
-        return ResponseEntity.noContent().build();
     }
 }

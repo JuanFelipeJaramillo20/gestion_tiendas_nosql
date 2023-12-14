@@ -1,12 +1,13 @@
 package com.gestion_tiendas_nosql.Controllers;
 
-import com.gestion_tiendas_nosql.Entities.Product;
+import com.gestion_tiendas_nosql.DTOs.RefundDTO;
+import com.gestion_tiendas_nosql.Exceptions.RefundNotFoundException;
 import com.gestion_tiendas_nosql.Entities.Refund;
-import com.gestion_tiendas_nosql.Services.ProviderService;
 import com.gestion_tiendas_nosql.Services.RefundService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,36 +27,39 @@ public class RefundController {
     @GetMapping("{id}")
     @Operation(summary = "This method returns a refund with the specific id")
     public ResponseEntity<?> getRefundByID(@PathVariable("id") String id){
-        return ResponseEntity.ok(refundService.getRefundByID(id));
+        try {
+            Refund refund = refundService.getRefundById(id);
+            return ResponseEntity.ok(refund);
+        }catch (RefundNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @PostMapping()
     @Operation(summary = "This method creates a new refund")
-    public ResponseEntity<?> createRefund(@RequestBody RefundCreateRequest refundCreateRequest){
+    public ResponseEntity<?> createRefund(@RequestBody RefundDTO refundCreateRequest){
         return ResponseEntity.ok(refundService.createRefund(refundCreateRequest));
     }
 
     @PutMapping
     @Operation(summary = "This method updates an existing refund")
-    public ResponseEntity<?> updateRefund(@PathVariable("id") String id, @RequestBody RefundUpdateRequest refundUpdateRequest) {
-        if (!refundService.refundExists(id)) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateRefund(@PathVariable("id") String id, @RequestBody RefundDTO refundUpdateRequest) {
+        try {
+            Refund updatedRefund = refundService.updateRefund(id, refundUpdateRequest);
+            return ResponseEntity.ok(updatedRefund);
+        }catch (RefundNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        Refund updatedRefund = refundService.updateRefund(id, refundUpdateRequest);
-
-        return ResponseEntity.ok(updatedRefund);
     }
 
     @DeleteMapping
     @Operation(summary = "This method deletes a provider")
     public ResponseEntity<?> deleteRefund(@PathVariable("id") String id) {
-        if (!refundService.refundExists(id)) {
-            return ResponseEntity.notFound().build();
+        try {
+            refundService.deleteRefund(id);
+            return ResponseEntity.ok().build();
+        }catch (RefundNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
-        refundService.deleteRefund(id);
-
-        return ResponseEntity.noContent().build();
     }
 }
